@@ -17,7 +17,7 @@
 ### https://www.freemaptools.com/convert-us-zip-code-to-lat-lng.htm
 
 library(zipcodeR)
-survey <- read.csv("C:/Users/micha/Desktop/AV Research/art-dummy.csv")
+survey <- read.csv("C:/Users/micha/Desktop/art-dummy.csv")
 
 # Records in the survey that must be deleted because they
 # are either ZIP codes from outside the United States or
@@ -47,9 +47,14 @@ itr_rmv_list <- c(82,132,218,237,243,251,332,332,405,425,460,475,475,486,753,757
                   2451,2452,2456,2456,2457,2461,2471,2481,2492,2492,2493,2498,2507,2507,2510,2520,2521,
                   115,167,169,216,216,246,248,300,307,326,331,350,381,397,411,438,438,450,469,517,604,
                   697,846,919,942,997,1009,1113,1114,1118,1298,1376,1402,1624,1634,1680,1769,1818,1834,
-                  1839,1845,1912,1951,1952,2000,2061,2261,2416,2437,2439)
+                  1839,1845,1912,1951,1952,2000,2061,2261,2416,2437,2439,471,1792,2158)
+
+bad_zips <- survey[0,]
  
-for (record in itr_rmv_list){ survey <- survey[-record,] }
+for (record in itr_rmv_list) { 
+  bad_zips <- rbind(bad_zips,data.frame(survey[record,]))
+  survey <- survey[-record,] 
+}
 
 # Build ourselves a couple new data frames to splice the 
 # data into the dummy data set, with a column for the ZIP
@@ -63,24 +68,34 @@ zip_20$centr_lon_20 <- NA
 zip_21$centr_lat_21 <- NA
 zip_21$centr_lon_21 <- NA
 
+empty_col <- data.frame(empty=NA)
+empty_col[nrow(bad_zips),] <- NA
+
 # Create coord pairs for each ZIP in both the 2020 and 2021 sets
 # Again, this works by referencing a big internal table in the
 # zipcodeR package that has a centroid lat/long for each ZIP code,
 # so we're just joining that data to our ZIP code lists for GIS use.
 
-for (i in seq(1, nrow(zip_20), 1)) { zip_20[i,] <- geocode_zip(zip_20$survey...20.[i]) }
-for (i in seq(1, nrow(zip_21), 1)) { zip_21[i,] <- geocode_zip(zip_21$survey...21.[i]) }
+for (i in seq(1, nrow(zip_20), 1)) { zip_20[i,] <- geocode_zip(str_pad(zip_20$survey...20.[i], 5, side = "left", pad = "0")) }
+for (i in seq(1, nrow(zip_21), 1)) { zip_21[i,] <- geocode_zip(str_pad(zip_21$survey...21.[i], 5, side = "left", pad = "0")) }
 
-# Now we splice the data back into the dummy data set.
+# Now we splice the data back into the dummy data set, including the records
+# that have bad ZIP codes - we just leave the coordinates as NAs.
 
+bad_zips <- cbind(bad_zips[,1:20],empty_col,empty_col,bad_zips[,21],empty_col,empty_col,bad_zips[,22:ncol(survey)])
 survey <- cbind(survey[,1:19],zip_20,zip_21,survey[,22:ncol(survey)])
+
+names(bad_zips) <- names(survey)
+survey <- rbind(survey,bad_zips)
+
+#for (row in seq(1,nrow(bad_zips),1)) { survey[nrow(survey) + 1] = bad_zips[row,] }
                 
 # Write to CSV.
 
-write.csv(survey, "C:/Users/micha/Desktop/AV Research/dummy-centroids.csv")
+write.csv(survey, "C:/Users/micha/Desktop/dummy-centroids.csv")
 
 # Remove unneeded variables from data environment.
 
-rm("zip_20","zip_21","i","itr_rmv_list")
+rm("zip_20","zip_21","i","itr_rmv_list","bad_zips","empty_col","record","row")
 
 ### END OF SCRIPT ###
