@@ -18,6 +18,11 @@ complete_records <- na.omit(cor_survey)
 # Give us a corr table to do manual cross tabs with.
 crosstabs <- round(cor(complete_records),2)
 
+# TO DO #
+# Generate a series of CSVs that only have the variables
+# which are correlated with ONE of our set of dependent
+# variables. Need direction.
+
 # Output the correlation table to CSV.
 write.csv(crosstabs, "C:/Users/micha/Desktop/art-crosstabs.csv")
 
