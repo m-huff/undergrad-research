@@ -5,7 +5,7 @@
 lapply(c("mclust","pastecs","dplyr","stringr","useful"), library, character.only = TRUE)
 
 # Load survey data and remove incomplete records.
-dat <- read.csv("D:/Manually Transferred Files/AV Research/art-change.csv",header=TRUE)
+dat <- read.csv("C:/Users/micha/Desktop/art-indiv.csv",header=TRUE)
 dat <- subset(dat, progress == '100')
 
 ### Manipulate the survey data into the above format where the survey
@@ -40,21 +40,31 @@ dat$unemployed<-ifelse(grepl("Unemployed",dat$work_cat) & dat$working == 0 & dat
 dat$cars_per_adult <- round(as.numeric(substr(dat$hhcar_cat, 1, 1)) / 
                               as.numeric(substr(dat$hhadu_cat, 1, 1)), digits = 2)
 
-# dat$cpa_1<-ifelse(dat$cars_per_adult == 0,"1","0")
-# dat$cpa_2<-ifelse(dat$cars_per_adult > 0 & dat$cars_per_adult < 1,"1","0")
-# dat$cpa_3<-ifelse(dat$cars_per_adult == 1,"1","0")
-# dat$cpa_4<-ifelse(dat$cars_per_adult > 1,"1","0")
-dat$no_hhcar <- ifelse(dat$cars_per_adult == 0,"1","0")
 dat$hhcar_1up <- ifelse(dat$cars_per_adult >= 1,"1","0")
+dat$hhcar_under1 <- ifelse(dat$cars_per_adult < 1,"1","0")
+dat$hhcar_1 <- ifelse(dat$cars_per_adult == 1,"1","0")
+dat$hhcar_0 <- ifelse(dat$cars_per_adult == 0,"1","0")
 
-# Create binary variable that indicates whether or not there
-# are any children present in the household.
 dat$kids<-dat$hhkid_cat_2+dat$hhkid_cat_3+dat$hhkid_cat_4
 
 ### Now that our variables are classified like we want them to be,
 ### we'll pull them out of the full data set and into their own
 ### data frames for isolated viewing and manipulation.
 
+# Pull our relevant variables into MOBILITY VARIABLES DATAFRAME.
+vars_mobil <- data.frame(dat$lic_cat_2, dat$lic_cat_3, dat$lic_cat_4,
+                         dat$hhcar_0, dat$hhcar_1up)
+
+vars_mobil <- vars_mobil %>% mutate_all(na_if,"")
+vars_mobil[vars_mobil=="" | is.na(vars_mobil)]<-0
+vars_mobil <- data.frame(lapply(vars_mobil,as.numeric))
+
+# Trim the full dataset to its new size based on which questions were
+# fully answered.
+# dat <- dat %>% mutate_all(na_if,"")
+# dat <- dat[(!is.na(dat$hhcar_0)),]
+
+# Construct individual variable dataframe.
 vars_indiv <- data.frame(dat$age_cat_1, dat$age_cat_2_3, dat$age_cat_4, 
                          dat$age_cat_5, dat$gen_cat_1, dat$college, 
                          dat$student, dat$working, dat$hhinc_cat_1, 
@@ -66,13 +76,6 @@ vars_indiv <- vars_indiv %>% mutate_all(na_if,"")
 vars_indiv <- na.omit(vars_indiv)
 vars_indiv <- data.frame(lapply(vars_indiv,as.numeric))
 
-# Pull our relevant variables into MOBILITY VARIABLES DATAFRAME.
-vars_mobil <- data.frame(dat$lic_cat_2, dat$lic_cat_3, dat$lic_cat_4,
-                         dat$no_hhcar, dat$hhcar_1up)
-
-vars_mobil <- vars_mobil %>% mutate_all(na_if,"")
-vars_mobil <- na.omit(vars_mobil)
-vars_mobil <- data.frame(lapply(vars_mobil,as.numeric))
 
 
 
@@ -81,7 +84,7 @@ vars_mobil <- data.frame(lapply(vars_mobil,as.numeric))
 #####################
 
 # BIC and LCCA estimation for mobility vars.
-m1bic <- mclustBIC(vars_mobil)
+m1bic <- mclustBIC(vars_mobil, G=1:5)
 summary(m1bic)
 
 m1 <- Mclust(vars_mobil, x=m1bic)
@@ -103,11 +106,11 @@ table(m2$classification)
 
 # Examine LCCA results
 # Class assignment and relative probability of class assignment
-dat$indiv_lcca <- m2$classification
-i_cabix3 <- round(m2$z,5)
-i_cabix3 <- as.data.frame(as.matrix(i_cabix3))
-colnames(i_cabix3) <- c("M_ZSCORE1","M_ZSCORE2","M_ZSCORE3","M_ZSCORE4","M_ZSCORE_5","M_ZSCORE_6")
-dat <- cbind(dat,i_cabix3)
+dat$mobil_lcca <- m1$classification
+m_cabix3 <- round(m1$z,5)
+m_cabix3 <- as.data.frame(as.matrix(m_cabix3))
+colnames(m_cabix3) <- c("M_ZSCORE1","M_ZSCORE2","M_ZSCORE3","M_ZSCORE4","M_ZSCORE5")
+dat <- cbind(dat,m_cabix3)
 head(dat)
 
-write.csv(dat, file="C:/Users/micha/Desktop/art-indiv.csv")
+write.csv(dat, file="C:/Users/micha/Desktop/art-lc.csv")
