@@ -21,12 +21,49 @@ retired <- get_acs(geography="zcta", variables=c("B19059_001"), year=2019)[,c(1,
 # TOTAL POP
 total_pop <- get_acs(geography="zcta", variables=c("B01001_001"), year=2019)[,c(1,4)]; colnames(total_pop) <- c("zcta","total_pop")
 
-data <- cbind(total_pop,employed,unemployed,retired,hh_1,hh_2,hh_3,hh_4)[,-c(3,5,7,9,11,13,15)]
-rm("employed","unemployed","total_pop","vars","retired")
+# EDUCATION
+edu_tot <- get_acs(geography="zcta", variables=c("B06009_001"), year=2019)[,c(1,4)]; colnames(edu_tot) <- c("zcta","edu_tot")
 
-data <- data %>% adorn_totals(data, where = "row", name = c("total_pop","employed","unemployed","retired"))
+# Less than bachelor's degree
+edu_1 <- get_acs(geography="zcta", variables=c("B06009_002"), year=2019)[,c(1,4)]; colnames(edu_1) <- c("zcta","edu_1")
+edu_2 <- get_acs(geography="zcta", variables=c("B06009_003"), year=2019)[,c(1,4)]; colnames(edu_2) <- c("zcta","edu_2")
+edu_3 <- get_acs(geography="zcta", variables=c("B06009_004"), year=2019)[,c(1,4)]; colnames(edu_3) <- c("zcta","edu_3")
+
+# Bachelor's degree
+edu_4 <- get_acs(geography="zcta", variables=c("B06009_005"), year=2019)[,c(1,4)]; colnames(edu_4) <- c("zcta","edu_4")
+
+# Graduate degree
+edu_5 <- get_acs(geography="zcta", variables=c("B06009_006"), year=2019)[,c(1,4)]; colnames(edu_5) <- c("zcta","edu_5")
+
+# HOUSEHOLDS
+tot_hh <- get_acs(geography="zcta", variables=c("B08202_001"), year=2019)[,c(1,4)]; colnames(tot_hh) <- c("zcta","tot_hh")
+
+# HH stats by size
+hh_1 <- get_acs(geography="zcta", variables=c("B08202_006"), year=2019)[,c(1,4)]; colnames(hh_1) <- c("zcta","hh_1")
+hh_2 <- get_acs(geography="zcta", variables=c("B08202_009"), year=2019)[,c(1,4)]; colnames(hh_2) <- c("zcta","hh_2")
+hh_3 <- get_acs(geography="zcta", variables=c("B08202_013"), year=2019)[,c(1,4)]; colnames(hh_3) <- c("zcta","hh_3")
+hh_4 <- get_acs(geography="zcta", variables=c("B08202_018"), year=2019)[,c(1,4)]; colnames(hh_4) <- c("zcta","hh_4")
+
+
+data <- cbind(total_pop,employed,unemployed,retired,edu_tot,edu_1,edu_2,edu_3,edu_4,edu_5)
+data <- data[,-c(3,5,7,9,11,13,15,17,19)]
+rm("employed","unemployed","total_pop","vars","retired","edu_tot","edu_1","edu_2","edu_3","edu_4","edu_5")
+
+data <- data %>% adorn_totals(data, where = "row")
 totals <- data[33121,]
+totals$less <- totals$edu_1 + totals$edu_2 + totals$edu_3
 
 var_employ <- round(totals$employed[1] / totals$total_pop[1], 2)
 var_unempl <- round(totals$unemployed[1] / totals$total_pop[1], 2)
 var_retire <- round(totals$retired[1] / totals$total_pop[1], 2)
+
+var_edu1 <- round(totals$less[1] / totals$edu_tot[1], 2)
+var_edu2 <- round(totals$edu_4[1] / totals$edu_tot[1], 2)
+var_edu3 <- round(totals$edu_5[1] / totals$edu_tot[1], 2)
+
+var_hh1 <- round(totals$hh_1[1] / totals$tot_hh[1], 2)
+var_hh2 <- round(totals$hh_2[1] / totals$tot_hh[1], 2)
+var_hh3 <- round(totals$hh_3[1] / totals$tot_hh[1], 2)
+var_hh4 <- round(totals$hh_4[1] / totals$tot_hh[1], 2)
+
+rm(list = ls())

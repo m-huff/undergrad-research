@@ -18,6 +18,29 @@ table(dat$hhinc_cat)
 table(dat$hhadu_cat)
 table(dat$hhkid_cat)
 
+# Get HH size (approximated) from the stats we have.
+dat <- dat %>%
+  mutate(adult_ct = case_when(
+    hhadu_cat == "4 or more" ~ 4,
+    hhadu_cat == "3"  ~ 3,
+    hhadu_cat == "2"  ~ 2,
+    hhadu_cat == "1"  ~ 1
+  ))
+
+dat <- dat %>%
+  mutate(child_ct = case_when(
+    hhkid_cat == "3 or more" ~ 3,
+    hhkid_cat == "2"  ~ 2,
+    hhkid_cat == "1"  ~ 1,
+    hhkid_cat == "0"  ~ 0
+  ))
+
+dat$hhsize <- dat$adult_ct + dat$child_ct
+table(dat$hhsize)
+
+# Generate stats for education.
+table(dat$edu_cat)
+
 # Generate stats for occupation.
 # Full-time work
 table(dat$work_cat_1)
